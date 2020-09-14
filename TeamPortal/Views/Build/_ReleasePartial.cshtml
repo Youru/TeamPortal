@@ -1,0 +1,41 @@
+﻿@using TeamPortal.Models
+
+@model List<ReleaseModel>
+
+<h1 class="display-4">Last Release States</h1>
+@{
+    <table class="table">
+        <thead>
+            <tr>
+                <th scope="col">Release</th>
+                <th scope="col">Environment</th>
+                <th scope="col">Status</th>
+                <th scope="col">Finish Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var release in Model)
+            {
+                foreach (var environment in release.environments)
+                {
+                    <tr>
+                        <td>
+                            <a href="@release._links.web.href">@release.name</a>
+                        </td>
+                        <td>
+                            @environment.name
+                        </td>
+                        <td>
+                            @environment.status
+                        </td>
+                        <td>
+                            @{var finishTime = environment.deploySteps.LastOrDefault()?.releaseDeployPhases.LastOrDefault()?.deploymentJobs.LastOrDefault()?.job.finishTime;}
+                            @if (finishTime != null)
+                                @DateTime.Parse(finishTime)
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+}

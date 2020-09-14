@@ -1,8 +1,12 @@
-﻿@{
+﻿@using TeamPortal.Models
+@using System;
+
+@model (List<MergeRequestModel>, List<BranchModel>)
+@{
     ViewData["Title"] = "Git";
 }
 
 <div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+    @await Html.PartialAsync("_MergeRequestPartial", Model.Item1)
+    @await Html.PartialAsync("_BranchesPartial", Model.Item2)
 </div>

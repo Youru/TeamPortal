@@ -1,12 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Diagnostics;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using TeamPortal.Back.Models;
+using TeamPortal.Services;
 
 namespace TeamPortal.Back.Controllers
 {
@@ -14,15 +11,20 @@ namespace TeamPortal.Back.Controllers
     public class GitController : Controller
     {
         private readonly ILogger<GitController> _logger;
+        private readonly IGitService _gitService;
 
-        public GitController(ILogger<GitController> logger)
+        public GitController(ILogger<GitController> logger, IGitService gitService)
         {
             _logger = logger;
+            _gitService = gitService;
         }
 
+        [ResponseCache(CacheProfileName = "Default1min")]
         public IActionResult Index()
         {
-            return View();
+            var mergeRequests = _gitService.GetMergeRequestInformations().Result;
+            var branches = _gitService.GetBranches().Result;
+            return View("index", (mergeRequests, branches));
         }
 
         [AllowAnonymous]

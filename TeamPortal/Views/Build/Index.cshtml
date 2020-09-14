@@ -1,8 +1,12 @@
-﻿@{
-    ViewData["Title"] = "Build";
+﻿@using TeamPortal.Models
+@using System;
+
+@model (List<BuildDefinitionModel>, List<ReleaseModel>)
+@{
+    ViewData["Title"] = "Azure Devops";
 }
 
 <div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+    @await Html.PartialAsync("_BuildDefinitionPartial", Model.Item1)
+    @await Html.PartialAsync("_ReleasePartial", Model.Item2)
 </div>

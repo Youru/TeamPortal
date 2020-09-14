@@ -1,17 +1,14 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.AzureAD.UI;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using TeamPortal.Services;
 
 namespace TeamPortal.Back
 {
@@ -39,6 +36,18 @@ namespace TeamPortal.Back
             });
             services.AddRazorPages();
             services.AddControllersWithViews().AddRazorRuntimeCompilation();
+            services.AddMvc(options =>
+            {
+                options.CacheProfiles.Add("Default1min",
+                    new CacheProfile()
+                    {
+                        Duration = 60
+                    });
+            });
+
+
+            services.AddTransient<IGitService, GitService>();
+            services.AddTransient<IBuildService, BuildService>();
 
             //services.AddAzureKeyVault($"https://{Configuration["KeyVault:Vault"]}.vault.azure.net/", Configuration["KeyVault:ClientId"], Configuration["KeyVault:ClientSecret"]);
         }

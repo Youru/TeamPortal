@@ -1,5 +1,3 @@
-using System;
-
 namespace TeamPortal.Back.Models
 {
     public class ErrorViewModel

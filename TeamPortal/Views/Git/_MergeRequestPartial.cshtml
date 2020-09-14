@@ -1,0 +1,40 @@
+﻿@using TeamPortal.Models
+
+@model List<MergeRequestModel>
+
+    <h1 class="display-4">Merge Request On Going</h1>
+    @{
+        <table class="table">
+            <thead>
+                <tr>
+                    <th scope="col">Last Update</th>
+                    <th scope="col">Author Name</th>
+                    <th scope="col">State</th>
+                    <th scope="col">Approved</th>
+                    <th scope="col">Title</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var mergeRequest in Model)
+                {
+                    <tr>
+                        <td>
+                            @mergeRequest.updated_at.ToShortDateString()
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelItem => mergeRequest.author.name)
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelItem => mergeRequest.state)
+                        </td>
+                        <td>
+                            @(mergeRequest.IsApproved?"Yes":"No")
+                        </td>
+                        <td>
+                            <a href="@mergeRequest.web_url">@Html.DisplayFor(modelItem => mergeRequest.title)</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }

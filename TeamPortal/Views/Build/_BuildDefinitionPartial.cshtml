@@ -1,0 +1,32 @@
+﻿@using TeamPortal.Models
+
+@model List<BuildDefinitionModel>
+
+<h1 class="display-4">Build Sonar States</h1>
+@{
+    <table class="table">
+        <thead>
+            <tr>
+                <th scope="col">Result</th>
+                <th scope="col">Definition</th>
+                <th scope="col">Completed Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var buildDefinition in Model)
+            {
+                <tr>
+                    <td>
+                        @Html.DisplayFor(modelItem => buildDefinition.result)
+                    </td>
+                    <td>
+                        <a href="@buildDefinition._links.web.href">@Html.DisplayFor(modelItem => buildDefinition.definition.name)</a>
+                    </td>
+                    <td>
+                        @buildDefinition.finishTime.ToShortDateString()
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

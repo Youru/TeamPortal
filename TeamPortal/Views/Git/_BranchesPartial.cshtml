@@ -1,0 +1,36 @@
+﻿@using TeamPortal.Models
+
+@model List<BranchModel>
+
+<h1 class="display-4">Existing Branches</h1>
+@{
+    <table class="table">
+        <thead>
+            <tr>
+                <th scope="col">Last Commit Date</th>
+                <th scope="col">Repository</th>
+                <th scope="col">Last Commit Author</th>
+                <th scope="col">Branch</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var branch in Model)
+            {
+                <tr>
+                    <td>
+                        @branch.commit.created_at.ToShortDateString()
+                    </td>
+                    <td>
+                        @branch.Repository
+                    </td>
+                    <td>
+                        @branch.commit.committer_name
+                    </td>
+                    <td>
+                        @branch.name
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

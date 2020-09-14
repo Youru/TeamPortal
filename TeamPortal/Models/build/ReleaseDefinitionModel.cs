@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace TeamPortal.Models
+﻿namespace TeamPortal.Models
 {
     public class ReleaseDefinitionModel
     {

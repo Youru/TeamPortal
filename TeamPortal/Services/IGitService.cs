@@ -6,7 +6,7 @@ namespace TeamPortal.Services
 {
     public interface IGitService
     {
-        Task<List<MergeRequestModel>> GetMergeRequestInformations();
-        Task<List<BranchModel>> GetBranches();
+        Task<IEnumerable<MergeRequestModel>> GetMergeRequestInformations();
+        Task<IEnumerable<BranchModel>> GetBranches();
     }
 }

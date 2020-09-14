@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.Configuration;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,6 +6,8 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
+using TeamPortal.Constant;
+using TeamPortal.Extension;
 using TeamPortal.Models;
 
 namespace TeamPortal.Services
@@ -14,108 +15,105 @@ namespace TeamPortal.Services
     public class BuildService : IBuildService
     {
         private readonly IConfiguration Configuration;
-        private string buildSonarqubeUrl => Configuration["AzureDevOps:BaseUrl"] + @"/{Project}/_apis/build/definitions?path=\SonarQube&api-version=6.0";
-        private string buildDefinitionUrl => Configuration["AzureDevOps:BaseUrl"] + @"/{Project}/_apis/build/latest/{0}?api-version=6.0-preview.1";
-        private string releaseAppsUrl => @"https://vsrm.dev.azure.com/{orga}/{Project}/_apis/release/definitions?path=\Apps&api-version=6.0";
-        private string releaseDefinitionUrl => @"https://vsrm.dev.azure.com/{orga}/{Project}/_apis/release/definitions/{0}?api-version=6.0";
-        private string releaseUrl => @"https://vsrm.dev.azure.com/{orga}/{Project}/_apis/release/releases/{0}?api-version=6.0";
+
         private string AuthenticationToken => Convert.ToBase64String(Encoding.ASCII.GetBytes($":{Configuration["AzureDevOps:AccessToken"]}"));
         public BuildService(IConfiguration configuration)
         {
             Configuration = configuration;
         }
-
-        public async Task<List<BuildDefinitionModel>> GetBuildInformations()
+        public async Task<IEnumerable<BuildDefinitionModel>> GetBuildInformations()
         {
-            var SonarBuildIds = await GetSonarQubeBuild();
-            var buildList = await GetBuildInformations(SonarBuildIds);
+            var buildList = await ContextExecution<BuildDefinitionModel>(async (client) =>
+            {
+                var SonarBuildIds = await GetSonarQubeBuild(client);
+                return await GetBuildInformations(client, SonarBuildIds);
+            });
 
             return buildList;
         }
-        public async Task<List<ReleaseModel>> GetReleaseInformations()
+        public async Task<IEnumerable<ReleaseModel>> GetReleaseInformations()
         {
-            var releaseDefinitionIds = await GetReleaseDefinitionIds();
-            var releaseList = await GetReleaseInformations(releaseDefinitionIds);
+            var releaseList = await ContextExecution<ReleaseModel>(async (client) =>
+            {
+                var releaseDefinitionIds = await GetReleaseDefinitionIds(client);
+                return await GetReleaseInformations(client, releaseDefinitionIds);
+            });
+
             return releaseList;
         }
-        private async Task<List<int>> GetSonarQubeBuild()
+        
+        private async Task<List<int>> GetSonarQubeBuild(HttpClient client)
         {
             var buildDefinitionIdsList = new List<int>();
-            using (var client = new HttpClient())
-            {
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", AuthenticationToken);
-                var response = await client.GetStringAsync(buildSonarqubeUrl);
-                var currentBuildList = JsonConvert.DeserializeObject<BuildResponseModel>(response);
-                var buildDefinitionIds = currentBuildList.value.Select(b => b.id).ToList();
-                buildDefinitionIdsList.AddRange(buildDefinitionIds);
-            }
+
+            var currentBuildList = await client.GetObjectAsync<BuildResponseModel>(Url.AzureDevOps.BuildSonarqubeUrl);
+            var buildDefinitionIds = currentBuildList.value.Select(b => b.id).ToList();
+            buildDefinitionIdsList.AddRange(buildDefinitionIds);
 
             return buildDefinitionIdsList;
         }
-        private async Task<List<BuildDefinitionModel>> GetBuildInformations(List<int> SonarBuildIds)
+        private async Task<List<BuildDefinitionModel>> GetBuildInformations(HttpClient client, List<int> SonarBuildIds)
         {
             var buildList = new List<BuildDefinitionModel>();
-            using (var client = new HttpClient())
+
+            foreach (var sonarBuildId in SonarBuildIds)
             {
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", AuthenticationToken);
-                foreach (var sonarBuildId in SonarBuildIds)
-                {
-                    var url = string.Format(buildDefinitionUrl, sonarBuildId);
-                    var response = await client.GetStringAsync(url);
-                    var currentBuild = JsonConvert.DeserializeObject<BuildDefinitionModel>(response);
-                    buildList.Add(currentBuild);
-                }
+                var url = string.Format(Url.AzureDevOps.BuildDefinitionUrl, sonarBuildId);
+                var currentBuild = await client.GetObjectAsync<BuildDefinitionModel>(url);
+                buildList.Add(currentBuild);
             }
+
             return buildList;
         }
-        private async Task<List<int>> GetReleaseDefinitionIds()
+        private async Task<List<int>> GetReleaseDefinitionIds(HttpClient client)
         {
             var buildDefinitionIdsList = new List<int>();
-            using (var client = new HttpClient())
-            {
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", AuthenticationToken);
-                var response = await client.GetStringAsync(releaseAppsUrl);
-                var currentBuildList = JsonConvert.DeserializeObject<ReleaseResponseModel>(response);
-                var buildDefinitionIds = currentBuildList.value.Select(b => b.id).ToList();
-                buildDefinitionIdsList.AddRange(buildDefinitionIds);
-            }
+
+            var currentBuildList = await client.GetObjectAsync<ReleaseResponseModel>(Url.AzureDevOps.ReleaseAppsUrl);
+            var buildDefinitionIds = currentBuildList.value.Select(b => b.id).ToList();
+
+            buildDefinitionIdsList.AddRange(buildDefinitionIds);
 
             return buildDefinitionIdsList;
         }
-        private async Task<List<ReleaseModel>> GetReleaseInformations(List<int> releaseDefinitionIds)
+        private async Task<List<ReleaseModel>> GetReleaseInformations(HttpClient client, List<int> releaseDefinitionIds)
         {
             var releaseList = new List<ReleaseModel>();
 
-            using (var client = new HttpClient())
+            foreach (var releaseDefinitionId in releaseDefinitionIds)
             {
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", AuthenticationToken);
-                foreach (var releaseDefinitionId in releaseDefinitionIds)
-                {
-                    var url = string.Format(releaseDefinitionUrl, releaseDefinitionId);
-                    var response = await client.GetStringAsync(url);
-                    var releaseDefinition = JsonConvert.DeserializeObject<ReleaseDefinitionModel>(response);
-                    var currentRelease = await GetReleaseFinistTime(releaseDefinition);
-                    releaseList.Add(currentRelease);
-                }
+                var url = string.Format(Url.AzureDevOps.ReleaseDefinitionUrl, releaseDefinitionId);
+
+                var releaseDefinition = await client.GetObjectAsync<ReleaseDefinitionModel>(url);
+                var currentRelease = await GetReleaseFinistTime(client, releaseDefinition);
+
+                releaseList.Add(currentRelease);
             }
+
 
             return releaseList;
         }
-        private async Task<ReleaseModel> GetReleaseFinistTime(ReleaseDefinitionModel releaseDefinition)
+        private async Task<ReleaseModel> GetReleaseFinistTime(HttpClient client, ReleaseDefinitionModel releaseDefinition)
         {
             var statusNotStarted = "notStarted";
-            ReleaseModel currentRelease;
+
+            var url = string.Format(Url.AzureDevOps.ReleaseUrl, releaseDefinition.lastRelease.id);
+            var currentRelease = await client.GetObjectAsync<ReleaseModel>(url);
+            currentRelease.environments = currentRelease.environments.Where(e => e.status != statusNotStarted);
+
+            return currentRelease;
+        }
+        private async Task<IEnumerable<T>> ContextExecution<T>(Func<HttpClient, Task<IEnumerable<T>>> action)
+        {
+            List<T> result = new List<T>();
+
             using (var client = new HttpClient())
             {
                 client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", AuthenticationToken);
-                var url = string.Format(releaseUrl, releaseDefinition.lastRelease.id);
-                var response = await client.GetStringAsync(url);
-                currentRelease = JsonConvert.DeserializeObject<ReleaseModel>(response);
-                currentRelease.environments = currentRelease.environments.Where(e => e.status != statusNotStarted);
+                result.AddRange(await action(client));
             }
-            return currentRelease;
+
+            return result;
         }
     }
 }
-
-

@@ -6,7 +6,7 @@ namespace TeamPortal.Services
 {
     public interface IBuildService
     {
-        Task<List<BuildDefinitionModel>> GetBuildInformations();
-        Task<List<ReleaseModel>> GetReleaseInformations();
+        Task<IEnumerable<BuildDefinitionModel>> GetBuildInformations();
+        Task<IEnumerable<ReleaseModel>> GetReleaseInformations();
     }
 }

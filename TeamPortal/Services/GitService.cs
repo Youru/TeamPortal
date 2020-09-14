@@ -1,9 +1,11 @@
 ﻿using Microsoft.Extensions.Configuration;
-using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
+using TeamPortal.Constant;
+using TeamPortal.Extension;
 using TeamPortal.Models;
 
 namespace TeamPortal.Services
@@ -11,73 +13,51 @@ namespace TeamPortal.Services
     public class GitService : IGitService
     {
         private readonly IConfiguration Configuration;
-        private string gitBaseUrl => Configuration["Git:BaseUrl"]+"/api/v4/projects/{0}%2F{1}/merge_requests?state=opened";
-        private string gitMergeApprovalUrl => Configuration["Git:BaseUrl"]+"/api/v4/projects/{0}%2F{1}/merge_requests/{2}/approvals";
-        private string gitBrancheUrl => Configuration["Git:BaseUrl"]+"/api/v4/projects/{0}%2F{1}/repository/branches";
         private List<(string, string)> ProjectRepositoryList => new List<(string, string)>
         {
-            
-        };
 
+        };
         public GitService(IConfiguration configuration)
         {
             Configuration = configuration;
         }
-
-        public async Task<List<MergeRequestModel>> GetMergeRequestInformations()
-        {
-            var mergeRequestList = new List<MergeRequestModel>();
-            foreach (var projectRepository in ProjectRepositoryList)
+        public async Task<IEnumerable<MergeRequestModel>> GetMergeRequestInformations() =>
+            await ContextExecutionMultiRepo(async (client, url, projectRepository) =>
             {
-                using (var client = new HttpClient())
-                {
-                    var url = string.Format(gitBaseUrl, projectRepository.Item1, projectRepository.Item2);
-                    client.DefaultRequestHeaders.Add("PRIVATE-TOKEN", Configuration["Git:AccessToken"]);
-                    var response = await client.GetStringAsync(url);
-                    var currentMergeRequestList = JsonConvert.DeserializeObject<List<MergeRequestModel>>(response);
-                    await SetApprovedParameter(projectRepository, client, currentMergeRequestList);
-                    mergeRequestList.AddRange(currentMergeRequestList);
-                }
-            }
+                var currentMergeRequestList = await client.GetObjectAsync<IEnumerable<MergeRequestModel>>(url);
+                await currentMergeRequestList.UpdateApprovedParameter(projectRepository, client);
 
-            return mergeRequestList;
-        }
-
-        public async Task<List<BranchModel>> GetBranches()
+                return currentMergeRequestList;
+            }, Url.Git.GitBaseUrl);
+        public async Task<IEnumerable<BranchModel>> GetBranches()
         {
-            var branches = new List<BranchModel>();
-            foreach (var projectRepository in ProjectRepositoryList)
+            var branches = await ContextExecutionMultiRepo(async (client, url, projectRepository) =>
             {
-                using (var client = new HttpClient())
-                {
-                    var url = string.Format(gitBrancheUrl, projectRepository.Item1, projectRepository.Item2);
-                    client.DefaultRequestHeaders.Add("PRIVATE-TOKEN", Configuration["Git:AccessToken"]);
-                    var response = await client.GetStringAsync(url);
-                    var currentBranches = JsonConvert.DeserializeObject<List<BranchModel>>(response);
-                    currentBranches.ForEach(cb => cb.Repository = projectRepository.Item2);
+                var currentBranches = await client.GetObjectAsync<IEnumerable<BranchModel>>(url);
+                currentBranches.ToList().ForEach(cb => cb.Repository = projectRepository.Item2);
 
-                    branches.AddRange(currentBranches);
-                }
-            }
+                return currentBranches.Where(b => IsFeatureBranches(b.name));
+            }, Url.Git.GitBrancheUrl);
 
-            branches = branches.Where(b => IsFeatureBranches(b.name)).OrderBy(b => b.commit.created_at).ToList();
-
-            return branches;
+            return branches.OrderBy(b => b.commit.created_at);
 
             bool IsFeatureBranches(string name) => !BranchToAvoid().Any(bta => bta.ToLower().Contains(name.ToLower()));
             List<string> BranchToAvoid() => new List<string>() { "dev", "master" };
         }
-
-        private async Task SetApprovedParameter((string, string) projectRepository, HttpClient client, List<MergeRequestModel> currentMergeRequestList)
+        
+        private async Task<IEnumerable<T>> ContextExecutionMultiRepo<T>(Func<HttpClient, string, (string, string), Task<IEnumerable<T>>> action, string url)
         {
-            foreach (var currentMergeRequest in currentMergeRequestList)
+            List<T> result = new List<T>();
+            foreach (var projectRepository in ProjectRepositoryList)
             {
-
-                var urlApproval = string.Format(gitMergeApprovalUrl, projectRepository.Item1, projectRepository.Item2, currentMergeRequest.iid);
-                var responseApproval = await client.GetStringAsync(urlApproval);
-                var approval = JsonConvert.DeserializeObject<ApprovalModel>(responseApproval);
-                currentMergeRequest.IsApproved = approval.approved;
+                using (var client = new HttpClient())
+                {
+                    client.DefaultRequestHeaders.Add("PRIVATE-TOKEN", Configuration["Git:AccessToken"]);
+                    var currentUrl = string.Format(url, projectRepository.Item1, projectRepository.Item2);
+                    result.AddRange(await action(client, currentUrl, projectRepository));
+                }
             }
+            return result;
         }
     }
 }

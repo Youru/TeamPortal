@@ -31,7 +31,7 @@
                             @(mergeRequest.IsApproved?"Yes":"No")
                         </td>
                         <td>
-                            <a href="@mergeRequest.web_url">@Html.DisplayFor(modelItem => mergeRequest.title)</a>
+                            <a target="_blank" rel="noopener noreferrer" href="@mergeRequest.web_url">@Html.DisplayFor(modelItem => mergeRequest.title)</a>
                         </td>
                     </tr>
                 }

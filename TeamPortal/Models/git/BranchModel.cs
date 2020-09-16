@@ -7,6 +7,7 @@ namespace TeamPortal.Models
         public string Repository { get; set; }
         public string name { get; set; }
         public CommitModel commit { get; set; }
+        public string web_url { get; set; }
     }
 
     public class CommitModel

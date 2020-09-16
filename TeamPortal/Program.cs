@@ -1,6 +1,10 @@
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Azure.KeyVault;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration.AzureKeyVault;
+using Microsoft.IdentityModel.Clients.ActiveDirectory;
+using System;
 
 namespace TeamPortal.Back
 {
@@ -17,9 +21,18 @@ namespace TeamPortal.Back
         {
             var builtConfig = config.Build();
 
-            config.AddAzureKeyVault($"https://{builtConfig["KeyVault:Vault"]}.vault.azure.net/",
-                builtConfig["KeyVault:ClientId"],
-                builtConfig["KeyVault:ClientSecret"]);
+            KeyVaultClient kvClient = new KeyVaultClient(async (authority, resource, scope) =>
+            {
+                var adCredential = new ClientCredential(builtConfig["KeyVault:ClientId"], builtConfig["KeyVault:ClientSecret"]);
+                var authenticationContext = new AuthenticationContext(authority, null);
+                return (await authenticationContext.AcquireTokenAsync(resource, adCredential)).AccessToken;
+            });
+            config.AddAzureKeyVault(new AzureKeyVaultConfigurationOptions
+            {
+                Vault = $"https://{builtConfig["KeyVault:Vault"]}.vault.azure.net/",
+                Client = kvClient,
+                ReloadInterval = TimeSpan.FromSeconds(20)
+            });
         })
         .UseStartup<Startup>();
     }

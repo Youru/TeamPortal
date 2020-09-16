@@ -20,7 +20,7 @@
                         @Html.DisplayFor(modelItem => buildDefinition.result)
                     </td>
                     <td>
-                        <a href="@buildDefinition._links.web.href">@Html.DisplayFor(modelItem => buildDefinition.definition.name)</a>
+                        <a target="_blank" rel="noopener noreferrer" href="@buildDefinition._links.web.href">@Html.DisplayFor(modelItem => buildDefinition.definition.name)</a>
                     </td>
                     <td>
                         @buildDefinition.finishTime.ToShortDateString()

@@ -10,14 +10,16 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using TeamPortal.Services;
 
-namespace TeamPortal.Back
+namespace TeamPortal
 {
     public class Startup
     {
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
+            StaticConfig = configuration;
         }
+        public static IConfiguration StaticConfig { get; private set; }
 
         public IConfiguration Configuration { get; }
 
@@ -48,8 +50,6 @@ namespace TeamPortal.Back
 
             services.AddTransient<IGitService, GitService>();
             services.AddTransient<IBuildService, BuildService>();
-
-            //services.AddAzureKeyVault($"https://{Configuration["KeyVault:Vault"]}.vault.azure.net/", Configuration["KeyVault:ClientId"], Configuration["KeyVault:ClientSecret"]);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

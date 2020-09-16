@@ -15,7 +15,6 @@ namespace TeamPortal.Services
     public class BuildService : IBuildService
     {
         private readonly IConfiguration Configuration;
-
         private string AuthenticationToken => Convert.ToBase64String(Encoding.ASCII.GetBytes($":{Configuration["AzureDevOps:AccessToken"]}"));
         public BuildService(IConfiguration configuration)
         {

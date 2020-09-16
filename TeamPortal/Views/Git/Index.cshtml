@@ -10,3 +10,12 @@
     @await Html.PartialAsync("_MergeRequestPartial", Model.Item1)
     @await Html.PartialAsync("_BranchesPartial", Model.Item2)
 </div>
+
+@section Scripts {
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $('#merge-request-table').DataTable();
+            $('#branche-table').DataTable();
+        });
+    </script>
+}

@@ -10,3 +10,14 @@
     @await Html.PartialAsync("_BuildDefinitionPartial", Model.Item1)
     @await Html.PartialAsync("_ReleasePartial", Model.Item2)
 </div>
+
+
+
+@section Scripts {
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $('#build-definition-table').DataTable();
+            $('#release-table').DataTable();
+        });
+    </script>
+}

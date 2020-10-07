@@ -1,0 +1,22 @@
+﻿<div>
+    <button id="myLink">Restart</button>
+</div>
+
+@section Scripts {
+    <script type="text/javascript">
+        $(document).ready(function () {
+
+            $("#myLink").click(function (e) {
+
+                e.preventDefault();
+                $.ajax({
+                    url: "Azure/Restart", 
+                    success: function () {
+                    }
+
+                });
+
+            });
+        });
+    </script>
+}

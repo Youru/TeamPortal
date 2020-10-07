@@ -14,8 +14,8 @@
 @section Scripts {
     <script type="text/javascript">
         $(document).ready(function () {
-            $('#merge-request-table').DataTable();
-            $('#branche-table').DataTable();
+            $('#merge-request-table').DataTable({ "paging": false, "info": false });
+            $('#branche-table').DataTable({ "paging": false, "info": false });
         });
     </script>
 }

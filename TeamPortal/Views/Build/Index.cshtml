@@ -16,8 +16,8 @@
 @section Scripts {
     <script type="text/javascript">
         $(document).ready(function () {
-            $('#build-definition-table').DataTable();
-            $('#release-table').DataTable();
+            $('#build-definition-table').DataTable({ "paging": false, "info": false });
+            $('#release-table').DataTable({ "info": false });
         });
     </script>
 }

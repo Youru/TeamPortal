@@ -40,7 +40,7 @@ namespace TeamPortal.Services
 
             return releaseList;
         }
-        
+
         private async Task<List<int>> GetSonarQubeBuild(HttpClient client)
         {
             var buildDefinitionIdsList = new List<int>();
@@ -84,9 +84,11 @@ namespace TeamPortal.Services
                 var url = string.Format(Url.AzureDevOps.ReleaseDefinitionUrl, releaseDefinitionId);
 
                 var releaseDefinition = await client.GetObjectAsync<ReleaseDefinitionModel>(url);
-                var currentRelease = await GetReleaseFinistTime(client, releaseDefinition);
-
-                releaseList.Add(currentRelease);
+                if (releaseDefinition.lastRelease != null)
+                {
+                    var currentRelease = await GetReleaseFinistTime(client, releaseDefinition);
+                    releaseList.Add(currentRelease);
+                }
             }
 
 

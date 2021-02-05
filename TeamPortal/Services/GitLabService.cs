@@ -10,14 +10,20 @@ using TeamPortal.Models;
 
 namespace TeamPortal.Services
 {
-    public class GitService : IGitService
+    public class GitLabService : IGitService
     {
         private readonly IConfiguration Configuration;
         private List<(string, string)> ProjectRepositoryList => new List<(string, string)>
         {
-
+            ("corum","corum.azure.crm"),
+            ("corum","Corum.Azure.core"),
+            ("corum","back-office-rest-api"),
+            ("corum","Corum.Tools"),
+            ("corum","Corum.Data"),
+            ("corum","dynamics-onprem"),
+            ("internal","crm")
         };
-        public GitService(IConfiguration configuration)
+        public GitLabService(IConfiguration configuration)
         {
             Configuration = configuration;
         }
@@ -28,7 +34,7 @@ namespace TeamPortal.Services
                 await currentMergeRequestList.UpdateApprovedParameter(projectRepository, client);
 
                 return currentMergeRequestList;
-            }, Url.Git.GitBaseUrl);
+            }, Url.GitLab.GitBaseUrl);
         public async Task<IEnumerable<BranchModel>> GetBranches()
         {
             var branches = await ContextExecutionMultiRepo(async (client, url, projectRepository) =>
@@ -37,7 +43,7 @@ namespace TeamPortal.Services
                 currentBranches.ToList().ForEach(cb => cb.Repository = projectRepository.Item2);
 
                 return currentBranches.Where(b => IsFeatureBranches(b.name));
-            }, Url.Git.GitBrancheUrl);
+            }, Url.GitLab.GitBrancheUrl);
 
             return branches.OrderBy(b => b.commit.created_at);
 

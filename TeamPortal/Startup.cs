@@ -11,6 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Identity.Web;
 using Microsoft.Identity.Web.UI;
+using System.Collections.Generic;
 using TeamPortal.Services;
 
 namespace TeamPortal
@@ -22,6 +23,8 @@ namespace TeamPortal
             Configuration = configuration;
             StaticConfig = configuration;
         }
+
+        public delegate IGitService ServiceResolver(string key);
         public static IConfiguration StaticConfig { get; private set; }
 
         public IConfiguration Configuration { get; }
@@ -32,7 +35,7 @@ namespace TeamPortal
             services.AddMicrosoftIdentityWebAppAuthentication(Configuration, "AzureAd")
                 .EnableTokenAcquisitionToCallDownstreamApi()
                 .AddInMemoryTokenCaches();
-            
+
             services.AddControllersWithViews(options =>
             {
                 var policy = new AuthorizationPolicyBuilder()
@@ -50,9 +53,20 @@ namespace TeamPortal
                         Duration = 60
                     });
             });
-
-
-            services.AddTransient<IGitService, GitService>();
+            services.AddTransient<ServiceResolver>(serviceProvider => key =>
+            {
+                switch (key)
+                {
+                    case nameof(GitLabService):
+                        return serviceProvider.GetService<GitLabService>();
+                    case nameof(GitDevopsService):
+                        return serviceProvider.GetService<GitDevopsService>();
+                    default:
+                        throw new KeyNotFoundException();
+                }
+            }); 
+            services.AddTransient<GitLabService>();
+            services.AddTransient<GitDevopsService>();
             services.AddTransient<IBuildService, BuildService>();
         }
 
